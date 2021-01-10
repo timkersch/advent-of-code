@@ -55,7 +55,6 @@ while (cycle < maxCycles) {
         (coordNeighbours.size == 80 - 2)
     }}
     activeSetPt2 = newActiveSet ++ newInactiveSet
-    println(activeSetPt2.size)
     cycle += 1
 }
 

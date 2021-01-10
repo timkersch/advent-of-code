@@ -29,4 +29,4 @@ def getKey(iterations: Int, subjectNumber: Long) : Long = {
 
 val doorLoopSize = getLoopSize(input(1))
 val key = getKey(doorLoopSize, input(0))
-println(key1)
+println(key)

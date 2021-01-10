@@ -40,56 +40,61 @@ val res = tilesMap.keys.filter(k => {
 println(res.map{x => x.toLong}.product)
 
 // Part 2
-val allRotations = tilesMap.map{case (k, v) => (k, getRotations(v))}.toMap
-val allCorners = tilesMap.filter{case (k, v) => !res.contains(k)}.map{case (x, arr) => getCorners(arr)}.toArray
-val candidateCorners = (res zip ((res map tilesMap).toArray.map{x => getRotations(x)})).toMap
+val nonCornerTiles = tilesMap.filter{case (k, v) => !res.contains(k)}.map{case (x, arr) => getCorners(arr)}.toArray.flatMap{x => x}
+val candidateCornerTiles = (res zip ((res map tilesMap).toArray.map{x => getRotations(x)})).toMap
+val (cornerId, cornerRotations) = candidateCornerTiles.head
+val upperLeftTile = (cornerId, cornerRotations.filter{x => isLeftCorner(x, nonCornerTiles)}.head)
 
-val upperLeftId = candidateCorners.head._1
-val upperLeftValue = candidateCorners.head._2.filter{x => isLeftCorner(x, allCorners.flatMap{x => x})}.head
-var image = Array.ofDim[(Int, Array[String])](Math.sqrt(tilesMap.size).toInt, Math.sqrt(tilesMap.size).toInt)
-var added = Set(upperLeftId)
+val assembledImage = assembleImage(upperLeftTile, tilesMap).map{x => x.map{x => removeCorners(x)}}
+val flattenedImage = assembledImage.map{x => x.flatMap{y => y}}.reduce((a,b) => (a zip b).map{case (x,y) => x + y})
 
-image(0)(0) = (upperLeftId, upperLeftValue)
+val imageRotations = getRotations(flattenedImage)
+val (finalImage, monsterCount) = imageRotations.map{x => (x, findMonsters(x))}.filter{case (x, y) => y != 0}.head
+val count = finalImage.reduce((a,b) => a + b).count(x => x == '#')
+println(count - (15 * monsterCount))
 
-var i = 0
-var j = 0
-while(i < Math.sqrt(tilesMap.size).toInt) {
-    val prevX = image(i)(0)
-    val matchingRight = findMatchingIdAndRotationRight(added, allRotations, prevX._2)
-    if (matchingRight.size == 1) {
-        added = added ++ Set(matchingRight.head._1)
-        image(i+1)(0) = matchingRight.toArray.head
-    }
-    j = 1
-    while(j < Math.sqrt(tilesMap.size).toInt) {
-        val prevY = image(i)(j-1)
-        val matchingBottom = findMatchingIdAndRotationBottom(added, allRotations, prevY._2)
-        if (matchingBottom.size == 1) {
-            added = added ++ Set(matchingBottom.head._1)
-            image(i)(j) = matchingBottom.toArray.head
+def assembleImage(upperLeftTile: (Int, Array[String]), tiles: Map[Int,Array[String]]) : Array[Array[Array[String]]] = {
+    val allRotations = tiles.map{case (k, v) => (k, getRotations(v))}.toMap
+    val size = Math.sqrt(tilesMap.size).toInt
+    var added = Set(upperLeftTile._1)
+    var image = Array.ofDim[Array[String]](size, size)
+    image(0)(0) = upperLeftTile._2
+    
+    var i = 0
+    var j = 0
+    while(i < size) {
+        val prevX = image(i)(0)
+        val matchingRight = findMatchingIdAndRotationRight(added, allRotations, prevX)
+        if (matchingRight.size == 1) {
+            added = added ++ Set(matchingRight.head._1)
+            image(i+1)(0) = matchingRight.head._2
         }
-        j += 1
+        j = 1
+        while(j < size) {
+            val prevY = image(i)(j-1)
+            val matchingBottom = findMatchingIdAndRotationBottom(added, allRotations, prevY)
+            if (matchingBottom.size == 1) {
+                added = added ++ Set(matchingBottom.head._1)
+                image(i)(j) = matchingBottom.head._2
+            }
+            j += 1
+        }
+        i += 1
     }
-    i += 1
+    return image
 }
 
-val removedCorners = image.map{x => x.map{case (a,b) => b}.map{x => removeCorners(x)}}
-val flattened = removedCorners.map{x => x.flatMap{y => y}}.reduce((a,b) => (a zip b).map{case (x,y) => x + y})
-
-val pattern = new Regex("..................#.#....##....##....###.#..#..#..#..#..#...")
-val rots = getRotations(flattened)
-val ress = rots.map{x => (x, find(x, pattern))}.filter{case (x, y) => y != 0}.head
-val count = ress._1.reduce((a,b) => a + b).count(x => x == '#')
-println(count - (15 * ress._2))
-
-def find(arr: Array[String], regex: Regex) : Int = {
+def findMonsters(arr: Array[String]) : Int = {
+    val regex = new Regex("..................#.#....##....##....###.#..#..#..#..#..#...")
+    val lines = 3
+    val chunkSize = 20
+    
     var monsters = 0
-    for (i <- 0 until arr.length - 3) {
-        val sliced = arr.slice(i, i+3)
-        for (j <- 0 until arr.length - 20) {
-            val substr = sliced.map{x => x.substring(j, j+20)}
-            val str = substr.reduce((x,y) => x + y)
-            if (regex.matches(str)) monsters += 1
+    for (i <- 0 until arr.length - lines) {
+        val sliced = arr.slice(i, i + lines)
+        for (j <- 0 until arr.length - chunkSize) {
+            val substr = sliced.map{x => x.substring(j, j + chunkSize)}.reduce((x,y) => x + y)
+            if (regex.matches(substr)) monsters += 1
         }
     }
     return monsters
@@ -131,9 +136,7 @@ def isLeftCorner(tile: Array[String], arr: Array[String]) : Boolean = {
 
     val notContainsTop = arr.count(x => x.equals(topRow)) == 0
     val notContainsLeft = arr.count(x => x.equals(leftColumn)) == 0
-    val containsRight = arr.count(x => x.equals(rightColumn)) >= 1
-    val containsLast = arr.count(x => x.equals(lastRow)) >= 1
-    return (notContainsTop && notContainsLeft && containsRight && containsLast)
+    return (notContainsTop && notContainsLeft)
 }
 
 def getRotations(tile: Array[String]) : Array[Array[String]] = {
