@@ -21,7 +21,6 @@ println(dist1 * dist3)
 // Part 2
 val mem = Array.fill[Long](arr.length)(-1)
 def arrange(arr: Array[Int], index: Int) : Long = {
-    // If it reaches the end, that's 1 combination
     if (arr.length == 1) {
         return 1
     } else if(mem(index) != -1) {

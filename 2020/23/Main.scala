@@ -20,7 +20,7 @@ def updateCups(iterations: Int, arr: Array[Int]) : Map[Int, Int] = {
         val third = mapping(second)
         val nextValues = List(first, second, third)
 
-        val destinationCup = getDestinationCup(currentValue, max, nextValues, mapping)
+        val destinationCup = getDestinationCup(currentValue, max, nextValues)
         val oldDestinationNext = mapping(destinationCup)
         mapping.put(destinationCup, first)
         mapping.put(currentValue, mapping(third))
@@ -32,7 +32,7 @@ def updateCups(iterations: Int, arr: Array[Int]) : Map[Int, Int] = {
     return mapping.toMap
 }
 
-def getDestinationCup(target: Int, max: Int, ignore: List[Int], mapping: scala.collection.mutable.Map[Int, Int]) : Int = {
+def getDestinationCup(target: Int, max: Int, ignore: List[Int]) : Int = {
     var t = target - 1
     if (t == 0) t = max
     

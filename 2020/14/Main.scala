@@ -37,10 +37,10 @@ def applyMask(mask: String, value: Long) : Long = {
     }}.mkString("")
     return java.lang.Long.parseUnsignedLong(bigString, 2)
 }
+
 println(sumMap(mapping))
 
 // Part 2
-
 def combinations(mask: String) : List[String] = {
     if (mask.indexOf("X") == -1) {
         return List(mask)
